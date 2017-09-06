@@ -1,11 +1,12 @@
 import React from 'react';
-import {BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from 'recharts';
+import {BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell} from 'recharts';
 
 class App extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            data: []
+            data: [],
+            activeIndex: 0
         };
 
         this.randomData = this.randomData.bind(this);
@@ -37,7 +38,12 @@ class App extends React.Component {
             maxIndex = this.state.data.length,
             data = this.state.data;
 
+        this.refs.btn.setAttribute("disabled", "disabled");
+
         function swapController() {
+            stateSave.setState({
+                activeIndex: swapIndex + 1
+            });
             let swapPromise = new Promise((resolve, reject) => {
                 if (swapIndex < maxIndex - 1) {
                     if (data[swapIndex]["Value"] > data[swapIndex + 1]["Value"]) {
@@ -53,7 +59,7 @@ class App extends React.Component {
                 }
                 setTimeout(function () {
                     resolve(swapped);
-                }, 50)
+                }, 5)
             });
 
             swapPromise.then((ifSwapped) => {
@@ -67,8 +73,13 @@ class App extends React.Component {
                     swapped = false;
                     initialIndex++;
                     swapController();
+                } else {
+                    stateSave.setState({
+                        activeIndex: 0
+                    });
+                    stateSave.refs.btn.removeAttribute("disabled");
                 }
-            })
+            });
         }
 
         swapController();
@@ -80,12 +91,13 @@ class App extends React.Component {
 
                 <h1>Data Visualizer</h1>
 
-                <Chart data={this.state.data}/>
+                <Chart data={this.state.data} activeIndex={this.state.activeIndex}/>
 
                 <div>
                     <button className="button" id="randomData" onClick={this.randomData}>Random Dataset</button>
-                    <button className="button" id="sortData" onClick={this.bubbleSort}>Bubble Sort</button>
+                    <button className="button" id="sortData" ref="btn" onClick={this.bubbleSort}>Bubble Sort</button>
                 </div>
+
             </section>
         );
     }
@@ -100,7 +112,8 @@ class Chart extends React.Component {
         return (
             <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={this.props.data}
-                          margin={{top: 5, right: 30, left: 20, bottom: 5}}>
+                          margin={{top: 5, right: 30, left: 20, bottom: 5}}
+                          maxBarSize={30}>
                     <XAxis dataKey="Index"
                            type="number"
                            domain={[1, 20]}
@@ -109,7 +122,13 @@ class Chart extends React.Component {
                            padding={{left: 20, right: 20}}/>
                     <YAxis domain={[0, 100]}/>
                     <CartesianGrid strokeDashArray="3 3"/>
-                    <Bar dataKey="Value" fill="#8884d8"/>
+                    <Bar dataKey="Value">
+                        {
+                            this.props.data.map((entry, index) =>(
+                                <Cell key={`cell-${index}`} fill={this.props.activeIndex === index ? 'red' : 'black'}/>
+                            ))
+                        }
+                    </Bar>
                     <Tooltip/>
                 </BarChart>
             </ResponsiveContainer>
